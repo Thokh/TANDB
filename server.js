@@ -420,7 +420,7 @@ function getLocalIpAddresses() {
   return addresses;
 }
 
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, () => {
   const localIps = getLocalIpAddresses();
   console.log(`===================================================`);
   console.log(`🚀 InstaCheck Pro is running!`);
