@@ -3,8 +3,19 @@
   "version": "1.0.0",
   "description": "Mini app check live tài khoản Instagram và lượt theo dõi thời gian thực",
   "main": "server.js",
+  "bin": "server.js",
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ],
+    "outputPath": "./dist"
+  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build:exe": "pkg . --targets node18-win-x64 --output dist/InstaCheck.exe"
   },
   "keywords": [
     "instagram",

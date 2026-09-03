@@ -4,8 +4,9 @@ const path = require('path');
 const { URL } = require('url');
 
 const PORT = process.env.PORT || 3000;
+const BASE_DIR = process.pkg ? path.dirname(process.execPath) : __dirname;
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = path.join(BASE_DIR, 'data');
 const STATE_FILE = path.join(DATA_DIR, 'state.json');
 const KEYS_FILE = path.join(DATA_DIR, 'keys.json');
 
@@ -643,4 +644,14 @@ server.listen(PORT, () => {
     console.log(`👉 (Cac may khac trong cung mang co the vao link LAN o tren)`);
   }
   console.log(`===================================================`);
+
+  // Auto open browser when running as packaged exe
+  if (process.pkg) {
+    try {
+      const { exec } = require('child_process');
+      setTimeout(() => {
+        exec(`start http://localhost:${PORT}`);
+      }, 1000);
+    } catch (e) {}
+  }
 });
