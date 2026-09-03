@@ -52,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnClearInput = document.getElementById('btnClearInput');
   const btnSampleData = document.getElementById('btnSampleData');
   const fileInput = document.getElementById('fileInput');
+  const proxyListInput = document.getElementById('proxyList');
+  const proxyStatus = document.getElementById('proxyStatus');
   const concurrencySelect = document.getElementById('concurrencySelect');
   const delaySelect = document.getElementById('delaySelect');
   const btnStartBatch = document.getElementById('btnStartBatch');
@@ -427,6 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const payload = {
         rawInput: usernamesInput.value,
+        rawProxy: proxyListInput ? proxyListInput.value : '',
         results,
         autoLoop: autoLoopToggle.checked,
         intervalSeconds: parseInt(autoLoopInterval.value) || 60,
@@ -475,6 +478,11 @@ document.addEventListener('DOMContentLoaded', () => {
           usernamesInput.value = state.rawInput;
           updateInputCount();
         }
+        if (state.rawProxy && proxyListInput) {
+          proxyListInput.value = state.rawProxy;
+          // Trigger input event to update proxy status
+          proxyListInput.dispatchEvent(new Event('input'));
+        }
         if (Array.isArray(state.results) && state.results.length > 0) {
           results = state.results;
           renderTable();
@@ -511,6 +519,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   usernamesInput.addEventListener('input', updateInputCount);
+
+  if (proxyListInput) {
+    proxyListInput.addEventListener('input', () => {
+      const pList = proxyListInput.value.split(/[\r\n]+/).map(p => p.trim()).filter(Boolean);
+      if (pList.length > 0) {
+        proxyStatus.innerHTML = `<span style="color:var(--live-color)">Đã cấu hình ${pList.length} Proxy (Sẵn sàng)</span>`;
+      } else {
+        proxyStatus.textContent = 'Chưa cấu hình (Đang dùng IP máy chủ)';
+      }
+      scheduleAutoSave();
+    });
+  }
 
   btnClearInput.addEventListener('click', () => {
     usernamesInput.value = '';
@@ -605,6 +625,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const concurrency = parseInt(concurrencySelect.value) || 2;
     const delayMs = parseInt(delaySelect.value) || 300;
+    
+    const proxyListVal = proxyListInput ? proxyListInput.value : '';
+    const proxyList = proxyListVal.split(/[\r\n]+/).map(p => p.trim()).filter(Boolean);
 
     let totalCheckedInRound = 0;
     let newResultsMap = new Map();
@@ -617,7 +640,8 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({
           usernames: list,
           concurrency,
-          delayMs
+          delayMs,
+          proxyList
         }),
         signal: abortController.signal
       });
@@ -1008,10 +1032,14 @@ document.addEventListener('DOMContentLoaded', () => {
     singleResultCard.classList.add('hidden');
 
     try {
+      const proxyListVal = proxyListInput ? proxyListInput.value : '';
+      const proxies = proxyListVal.split(/[\r\n]+/).map(p => p.trim()).filter(Boolean);
+      const proxy = proxies.length > 0 ? proxies[Math.floor(Math.random() * proxies.length)] : '';
+
       const res = await fetch('/api/check-single', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ username: rawVal })
+        body: JSON.stringify({ username: rawVal, proxy })
       });
 
       if (res.status === 401) {

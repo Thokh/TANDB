@@ -129,7 +129,16 @@
               </div>
             </div>
 
-            <div class="action-buttons">
+          <div class="setting-group proxy-settings">
+            <div class="setting-header">
+              <label><i class="fas fa-network-wired"></i> Cấu hình Proxy (Chống khóa IP)</label>
+              <div class="setting-help">Dùng cho VPS/Render (Hỗ trợ định dạng: IP:Port hoặc IP:Port:User:Pass)</div>
+            </div>
+            <textarea id="proxyList" rows="3" class="modern-input proxy-input" placeholder="Ví dụ: 192.168.1.1:8080&#10;192.168.1.2:8080:admin:pass&#10;http://user:pass@192.168.1.3:8080 (Bỏ trống nếu không dùng)"></textarea>
+            <div class="proxy-status" id="proxyStatus">Chưa cấu hình (Đang dùng IP máy chủ)</div>
+          </div>
+
+          <div class="action-buttons">
               <button id="btnStartBatch" class="btn btn-primary btn-lg">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 <span>Bắt đầu kiểm tra</span>

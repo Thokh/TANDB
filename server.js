@@ -2,6 +2,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
+const nodeFetch = require('node-fetch');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 
 const PORT = process.env.PORT || 3000;
 const BASE_DIR = process.pkg ? path.dirname(process.execPath) : __dirname;
@@ -140,7 +142,25 @@ function cleanUsernameInput(input) {
   return clean.trim();
 }
 
-async function checkInstagramAccount(rawUsername) {
+function parseProxyStr(str) {
+  if (!str) return null;
+  let p = str.trim();
+  if (!p) return null;
+  
+  if (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('socks')) {
+    return p;
+  }
+  
+  const parts = p.split(':');
+  if (parts.length === 4) {
+    return `http://${parts[2]}:${parts[3]}@${parts[0]}:${parts[1]}`;
+  } else if (parts.length === 2) {
+    return `http://${parts[0]}:${parts[1]}`;
+  }
+  return `http://${p}`;
+}
+
+async function checkInstagramAccount(rawUsername, proxyStr = '') {
   const username = cleanUsernameInput(rawUsername);
   if (!username) {
     return {
@@ -158,7 +178,7 @@ async function checkInstagramAccount(rawUsername) {
   const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
   try {
-    const res = await fetch(profileUrl, {
+    const fetchOptions = {
       headers: {
         'User-Agent': ua,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -166,7 +186,14 @@ async function checkInstagramAccount(rawUsername) {
         'Cache-Control': 'no-cache'
       },
       signal: controller.signal
-    });
+    };
+
+    const proxyUrl = parseProxyStr(proxyStr);
+    if (proxyUrl) {
+      fetchOptions.agent = new HttpsProxyAgent(proxyUrl);
+    }
+
+    const res = await nodeFetch(profileUrl, fetchOptions);
 
     const html = await res.text();
     clearTimeout(timeoutId);
@@ -251,15 +278,19 @@ async function checkInstagramAccount(rawUsername) {
 }
 
 // Robust Promise.all worker pool with concurrency control
-async function runBatchQueue(usernames, concurrency, delayMs, onProgress, isAborted) {
+async function runBatchQueue(usernames, concurrency, delayMs, proxyList, onProgress, isAborted) {
   let index = 0;
   const total = usernames.length;
+  const proxies = Array.isArray(proxyList) && proxyList.length > 0 ? proxyList : [];
 
   async function worker() {
     while (index < total) {
       if (isAborted()) return;
       const currentIndex = index++;
       const targetUsername = usernames[currentIndex];
+      
+      // Round-robin proxy selection
+      const currentProxy = proxies.length > 0 ? proxies[currentIndex % proxies.length] : '';
 
       if (delayMs > 0 && currentIndex > 0) {
         await new Promise(r => setTimeout(r, delayMs));
@@ -267,7 +298,7 @@ async function runBatchQueue(usernames, concurrency, delayMs, onProgress, isAbor
       if (isAborted()) return;
 
       try {
-        const result = await checkInstagramAccount(targetUsername);
+        const result = await checkInstagramAccount(targetUsername, currentProxy);
         if (!isAborted()) {
           onProgress(result, currentIndex + 1, total);
         }
@@ -449,13 +480,15 @@ const server = http.createServer(async (req, res) => {
       try {
         const data = JSON.parse(body || '{}');
         const username = data.username;
+        const proxy = data.proxy || '';
+        
         if (!username) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Username is required' }));
           return;
         }
 
-        const result = await checkInstagramAccount(username);
+        const result = await checkInstagramAccount(username, proxy);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(result));
       } catch (err) {
@@ -476,6 +509,7 @@ const server = http.createServer(async (req, res) => {
         const list = Array.isArray(data.usernames) ? data.usernames : [];
         const concurrency = Math.min(Math.max(parseInt(data.concurrency) || 2, 1), 10);
         const delayMs = Math.max(parseInt(data.delayMs) || 300, 50);
+        const proxyList = Array.isArray(data.proxyList) ? data.proxyList : [];
 
         if (list.length === 0) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -507,6 +541,7 @@ const server = http.createServer(async (req, res) => {
           list,
           concurrency,
           delayMs,
+          proxyList,
           (item, currentCount, totalCount) => {
             if (aborted) return;
             stats.checked = currentCount;
