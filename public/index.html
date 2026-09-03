@@ -36,6 +36,17 @@
             <span class="status-dot"></span>
             <span class="status-text">Hệ thống sẵn sàng</span>
           </div>
+
+          <div class="license-status-chip" id="licenseStatusChip">
+            <span class="key-icon">🔑</span>
+            <span class="license-text" id="licenseTextDisplay">Đang tải Key...</span>
+            <button id="btnManageLicense" class="btn-text-chip" title="Đổi Key">Đổi Key</button>
+          </div>
+
+          <button id="btnAdminPanel" class="btn btn-outline btn-sm hidden" title="Mở Bảng Quản Trị License Key">
+            👑 Quản Trị Key
+          </button>
+
           <button id="themeToggle" class="btn-icon" title="Chuyển giao diện Sáng / Tối">
             <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="4"/>
@@ -379,6 +390,116 @@
     <footer class="app-footer">
       <p>InstaCheck Pro &bull; Mini App Check Live Instagram & Lượt theo dõi &bull; Công nghệ quét tốc độ cao</p>
     </footer>
+  </div>
+
+  <!-- Modal Kích Hoạt License Key -->
+  <div id="licenseModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header-icon">
+        <div class="glowing-key-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+        </div>
+      </div>
+      <h2 class="modal-title">Kích Hoạt Bản Quyền</h2>
+      <p class="modal-desc">Vui lòng nhập mã License Key được cấp để sử dụng ứng dụng InstaCheck Pro</p>
+
+      <div id="modalKeyError" class="modal-error-alert hidden">
+        <span>Mã License Key không hợp lệ hoặc đã hết hạn!</span>
+      </div>
+
+      <form id="licenseForm" class="modal-form">
+        <div class="modal-input-wrap">
+          <input type="text" id="modalKeyInput" placeholder="Nhập License Key (ví dụ: IKID-VIP-2026)" autocomplete="off" required>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" id="btnActivateKey" class="btn btn-primary btn-block">
+            <span>Kích hoạt ngay</span>
+            <span class="spinner-small hidden" id="activateSpinner"></span>
+          </button>
+        </div>
+      </form>
+
+      <div class="modal-footer-hints">
+        <button type="button" id="btnUseDemoKey" class="hint-btn">👉 Dùng thử với Key mẫu: <code>DEMO-KEY-7DAYS</code></button>
+        <p class="hint-text">Cần cấp Key mới? Vui lòng liên hệ Quản trị viên hệ thống.</p>
+      </div>
+
+      <button id="btnCloseLicenseModal" class="modal-close-btn" title="Đóng">&times;</button>
+    </div>
+  </div>
+
+  <!-- Modal Quản Trị License Key (Chỉ Admin) -->
+  <div id="adminModal" class="modal-overlay hidden">
+    <div class="modal-card modal-large">
+      <div class="admin-modal-header">
+        <div class="admin-modal-title">
+          <h2>👑 Quản Trị Hệ Thống License Key</h2>
+          <span class="badge-status badge-live">Admin Master Mode</span>
+        </div>
+        <button id="btnCloseAdminModal" class="modal-close-btn">&times;</button>
+      </div>
+
+      <!-- Create New Key Box -->
+      <div class="admin-create-box">
+        <h3 class="admin-subtitle">Tạo License Key Mới</h3>
+        <div class="admin-form-row">
+          <div class="form-group flex-2">
+            <label>Mã Key:</label>
+            <div class="input-with-action">
+              <input type="text" id="newKeyInput" placeholder="Ví dụ: VIP-KHACHHANG-01">
+              <button type="button" id="btnGenRandomKey" class="btn btn-outline btn-sm">Tạo ngẫu nhiên</button>
+            </div>
+          </div>
+
+          <div class="form-group flex-2">
+            <label>Tên người dùng / Đội nhóm:</label>
+            <input type="text" id="newKeyName" placeholder="Ví dụ: Team Marketing - Nguyễn Văn A">
+          </div>
+
+          <div class="form-group flex-1">
+            <label>Thời hạn:</label>
+            <select id="newKeyExpire" class="form-select">
+              <option value="7">7 ngày</option>
+              <option value="30" selected>30 ngày (1 tháng)</option>
+              <option value="90">90 ngày (3 tháng)</option>
+              <option value="365">1 năm</option>
+              <option value="never">Vĩnh viễn (Không hết hạn)</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-0" style="align-self: flex-end;">
+            <button type="button" id="btnSubmitNewKey" class="btn btn-primary">
+              <span>+ Thêm Key</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Keys Table List -->
+      <div class="admin-keys-list-box">
+        <div class="admin-list-header">
+          <h3 class="admin-subtitle">Danh Sách Key Đang Hoạt Động (<span id="adminTotalKeys">0</span>)</h3>
+          <button id="btnRefreshKeys" class="text-btn">Làm mới danh sách</button>
+        </div>
+        <div class="table-responsive" style="max-height: 280px;">
+          <table class="results-table admin-keys-table">
+            <thead>
+              <tr>
+                <th>Mã License Key</th>
+                <th>Người Sử Dụng</th>
+                <th>Ngày Tạo</th>
+                <th>Hạn Sử Dụng</th>
+                <th>Trạng Thái</th>
+                <th width="120">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody id="adminKeysTableBody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Toast Notification -->

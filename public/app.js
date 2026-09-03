@@ -1,4 +1,4 @@
-// InstaCheck Pro Frontend Logic - With Auto-Save & Auto-Loop (1 min/check)
+// InstaCheck Pro Frontend Logic - With License System, Admin Panel & Auto-Loop
 document.addEventListener('DOMContentLoaded', () => {
   // State
   let results = [];
@@ -11,10 +11,40 @@ document.addEventListener('DOMContentLoaded', () => {
   let countdownSeconds = 60;
   let saveDebounceTimer = null;
 
+  // License State
+  let activeLicenseKey = localStorage.getItem('instacheck_license_key') || '';
+  let licenseInfo = null;
+
   // DOM Elements
   const themeToggle = document.getElementById('themeToggle');
   const navTabs = document.querySelectorAll('.nav-tab');
   const tabPanes = document.querySelectorAll('.tab-pane');
+
+  // License Elements
+  const licenseModal = document.getElementById('licenseModal');
+  const licenseForm = document.getElementById('licenseForm');
+  const modalKeyInput = document.getElementById('modalKeyInput');
+  const modalKeyError = document.getElementById('modalKeyError');
+  const btnActivateKey = document.getElementById('btnActivateKey');
+  const activateSpinner = document.getElementById('activateSpinner');
+  const btnUseDemoKey = document.getElementById('btnUseDemoKey');
+  const btnCloseLicenseModal = document.getElementById('btnCloseLicenseModal');
+  const licenseStatusChip = document.getElementById('licenseStatusChip');
+  const licenseTextDisplay = document.getElementById('licenseTextDisplay');
+  const btnManageLicense = document.getElementById('btnManageLicense');
+
+  // Admin Modal Elements
+  const btnAdminPanel = document.getElementById('btnAdminPanel');
+  const adminModal = document.getElementById('adminModal');
+  const btnCloseAdminModal = document.getElementById('btnCloseAdminModal');
+  const newKeyInput = document.getElementById('newKeyInput');
+  const newKeyName = document.getElementById('newKeyName');
+  const newKeyExpire = document.getElementById('newKeyExpire');
+  const btnGenRandomKey = document.getElementById('btnGenRandomKey');
+  const btnSubmitNewKey = document.getElementById('btnSubmitNewKey');
+  const adminTotalKeys = document.getElementById('adminTotalKeys');
+  const btnRefreshKeys = document.getElementById('btnRefreshKeys');
+  const adminKeysTableBody = document.getElementById('adminKeysTableBody');
 
   // Bulk Check Elements
   const usernamesInput = document.getElementById('usernamesInput');
@@ -80,6 +110,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Toast
   const toast = document.getElementById('toast');
 
+  // Helper to build headers with active license key
+  function getAuthHeaders(extraHeaders = {}) {
+    const headers = { 'Content-Type': 'application/json', ...extraHeaders };
+    if (activeLicenseKey) {
+      headers['X-License-Key'] = activeLicenseKey;
+    }
+    return headers;
+  }
+
   // 1. Theme Toggle
   const savedTheme = localStorage.getItem('instacheck_theme') || 'dark';
   document.body.className = savedTheme;
@@ -102,7 +141,251 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 3. Followers Parsing & Diff Helper
+  // 3. License Key Management & Verification
+  function showLicenseModal(errorMsg = '') {
+    licenseModal.classList.remove('hidden');
+    if (errorMsg) {
+      modalKeyError.textContent = errorMsg;
+      modalKeyError.classList.remove('hidden');
+    } else {
+      modalKeyError.classList.add('hidden');
+    }
+    modalKeyInput.value = activeLicenseKey || '';
+    modalKeyInput.focus();
+  }
+
+  function hideLicenseModal() {
+    licenseModal.classList.add('hidden');
+    modalKeyError.classList.add('hidden');
+  }
+
+  async function verifyLicenseKey(keyToVerify, isUserAction = false) {
+    if (!keyToVerify) {
+      showLicenseModal('Vui lòng nhập License Key để kích hoạt ứng dụng!');
+      return false;
+    }
+
+    btnActivateKey.disabled = true;
+    activateSpinner.classList.remove('hidden');
+
+    try {
+      const res = await fetch('/api/verify-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: keyToVerify.trim() })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        activeLicenseKey = data.key;
+        licenseInfo = data;
+        localStorage.setItem('instacheck_license_key', activeLicenseKey);
+
+        if (data.role === 'admin') {
+          licenseTextDisplay.innerHTML = '👑 <strong>Admin Master</strong>';
+          btnAdminPanel.classList.remove('hidden');
+        } else {
+          licenseTextDisplay.innerHTML = `🔑 ${escapeHtml(data.name)} (${escapeHtml(data.expireAt)})`;
+          btnAdminPanel.classList.add('hidden');
+        }
+
+        licenseStatusChip.classList.remove('unlicensed');
+        hideLicenseModal();
+
+        if (isUserAction) {
+          showToast(`Kích hoạt thành công: ${data.name}!`);
+        }
+        return true;
+      } else {
+        showLicenseModal(data.error || 'License Key không hợp lệ!');
+        licenseStatusChip.classList.add('unlicensed');
+        licenseTextDisplay.textContent = 'Chưa kích hoạt Key';
+        btnAdminPanel.classList.add('hidden');
+        return false;
+      }
+    } catch (err) {
+      showLicenseModal(`Lỗi kết nối máy chủ: ${err.message}`);
+      return false;
+    } finally {
+      btnActivateKey.disabled = false;
+      activateSpinner.classList.add('hidden');
+    }
+  }
+
+  licenseForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const val = modalKeyInput.value.trim();
+    if (!val) return;
+    await verifyLicenseKey(val, true);
+  });
+
+  btnUseDemoKey.addEventListener('click', () => {
+    modalKeyInput.value = 'DEMO-KEY-7DAYS';
+    verifyLicenseKey('DEMO-KEY-7DAYS', true);
+  });
+
+  btnManageLicense.addEventListener('click', () => {
+    showLicenseModal();
+  });
+
+  btnCloseLicenseModal.addEventListener('click', () => {
+    // Only close if key is already valid
+    if (licenseInfo && licenseInfo.valid) {
+      hideLicenseModal();
+    } else {
+      showToast('Bạn cần kích hoạt License Key để sử dụng ứng dụng!', 'error');
+    }
+  });
+
+  // 4. Admin Key Management Modal Logic
+  btnAdminPanel.addEventListener('click', () => {
+    adminModal.classList.remove('hidden');
+    loadAdminKeysList();
+  });
+
+  btnCloseAdminModal.addEventListener('click', () => {
+    adminModal.classList.add('hidden');
+  });
+
+  btnGenRandomKey.addEventListener('click', () => {
+    newKeyInput.value = generateRandomKey();
+  });
+
+  function generateRandomKey() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let p1 = '', p2 = '';
+    for (let i = 0; i < 4; i++) p1 += chars.charAt(Math.floor(Math.random() * chars.length));
+    for (let i = 0; i < 4; i++) p2 += chars.charAt(Math.floor(Math.random() * chars.length));
+    return `VIP-${p1}-${p2}`;
+  }
+
+  async function loadAdminKeysList() {
+    try {
+      const res = await fetch('/api/admin/keys', {
+        headers: getAuthHeaders()
+      });
+
+      if (!res.ok) {
+        showToast('Bạn không có quyền truy cập trang quản trị!', 'error');
+        adminModal.classList.add('hidden');
+        return;
+      }
+
+      const data = await res.json();
+      adminTotalKeys.textContent = data.keys.length;
+
+      if (!data.keys || data.keys.length === 0) {
+        adminKeysTableBody.innerHTML = `
+          <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">Chưa có Key nào. Hãy tạo Key đầu tiên ở trên!</td></tr>
+        `;
+        return;
+      }
+
+      adminKeysTableBody.innerHTML = '';
+      data.keys.forEach(k => {
+        const tr = document.createElement('tr');
+        const isExpired = k.expireAt !== 'Vĩnh viễn' && new Date(k.expireAt).getTime() < Date.now();
+        const statusBadge = isExpired
+          ? '<span class="badge-status badge-die">✕ Hết hạn</span>'
+          : '<span class="badge-status badge-live">● Hoạt động</span>';
+
+        tr.innerHTML = `
+          <td><code>${escapeHtml(k.key)}</code></td>
+          <td><strong>${escapeHtml(k.name || '-')}</strong></td>
+          <td>${escapeHtml(k.createdAt || '-')}</td>
+          <td>${escapeHtml(k.expireAt || 'Vĩnh viễn')}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-outline btn-sm" onclick="window.copyKeyToClipboard('${escapeHtml(k.key)}')">
+                📋 Copy
+              </button>
+              <button class="btn btn-outline btn-sm text-danger" onclick="window.deleteAdminKey('${escapeHtml(k.key)}')">
+                🗑️ Xóa
+              </button>
+            </div>
+          </td>
+        `;
+        adminKeysTableBody.appendChild(tr);
+      });
+    } catch (err) {
+      showToast(`Lỗi: ${err.message}`, 'error');
+    }
+  }
+
+  btnRefreshKeys.addEventListener('click', loadAdminKeysList);
+
+  btnSubmitNewKey.addEventListener('click', async () => {
+    const keyVal = newKeyInput.value.trim().toUpperCase();
+    const nameVal = newKeyName.value.trim();
+    const expireOption = newKeyExpire.value;
+
+    if (!keyVal) {
+      showToast('Vui lòng nhập mã Key!', 'error');
+      newKeyInput.focus();
+      return;
+    }
+
+    let expireAtStr = 'Vĩnh viễn';
+    if (expireOption !== 'never') {
+      const days = parseInt(expireOption) || 30;
+      const targetDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+      expireAtStr = targetDate.toISOString().split('T')[0];
+    }
+
+    try {
+      const res = await fetch('/api/admin/keys', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          key: keyVal,
+          name: nameVal || 'Khách hàng',
+          expireAt: expireAtStr
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Đã tạo License Key thành công: ${keyVal}`);
+        newKeyInput.value = '';
+        newKeyName.value = '';
+        loadAdminKeysList();
+      } else {
+        showToast(`Lỗi: ${data.error}`, 'error');
+      }
+    } catch (err) {
+      showToast(`Lỗi: ${err.message}`, 'error');
+    }
+  });
+
+  window.copyKeyToClipboard = function(keyText) {
+    copyToClipboard(keyText);
+    showToast(`Đã sao chép License Key: ${keyText}`);
+  };
+
+  window.deleteAdminKey = async function(keyToDelete) {
+    if (!confirm(`Bạn có chắc muốn XÓA / THU HỒI License Key: "${keyToDelete}"?\nKhách hàng sẽ bị khóa phần mềm ngay lập tức!`)) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/keys', {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ key: keyToDelete })
+      });
+      if (res.ok) {
+        showToast(`Đã xóa Key: ${keyToDelete}`);
+        loadAdminKeysList();
+      } else {
+        const data = await res.json();
+        showToast(`Lỗi: ${data.error}`, 'error');
+      }
+    } catch (err) {
+      showToast(`Lỗi: ${err.message}`, 'error');
+    }
+  };
+
+  // 5. Followers Parsing & Diff Helper
   function parseFollowersCount(str) {
     if (!str || str === 'N/A' || str === '-') return null;
     const clean = str.toString().trim().toUpperCase().replace(/,/g, '');
@@ -139,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return `<span class="change-badge change-up">${prevStr} ➔ ${currStr}</span>`;
   }
 
-  // 4. Persistence / Auto-Save System
+  // 6. Persistence / Auto-Save System
   async function saveStateToBackend() {
     try {
       const payload = {
@@ -152,12 +435,11 @@ document.addEventListener('DOMContentLoaded', () => {
         updatedAt: new Date().toISOString()
       };
 
-      // Also save to localStorage as backup
       localStorage.setItem('instacheck_saved_state', JSON.stringify(payload));
 
       await fetch('/api/state', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
 
@@ -177,7 +459,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       let state = null;
       try {
-        const res = await fetch('/api/state');
+        const res = await fetch('/api/state', {
+          headers: getAuthHeaders()
+        });
         if (res.ok) state = await res.json();
       } catch (e) {}
 
@@ -219,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 5. Input Formatting & Line Counter
+  // 7. Input Formatting & Line Counter
   function updateInputCount() {
     const lines = extractUsernames(usernamesInput.value);
     inputCountText.textContent = `${lines.length} tài khoản hợp lệ đã nhập`;
@@ -286,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .filter(Boolean);
   }
 
-  // 6. Batch Check Execution (Supports In-Place Updates for Auto-Loop)
+  // 8. Batch Check Execution (Supports In-Place Updates for Auto-Loop)
   async function runBatchCheck(isAutoLoop = false) {
     if (isRunning) return;
 
@@ -301,7 +585,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Map existing follower numbers to calculate diff
     const previousMap = new Map();
     results.forEach(r => {
       previousMap.set(r.username, r.followers);
@@ -325,13 +608,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let totalCheckedInRound = 0;
     let newResultsMap = new Map();
-    // Preload with existing results so table doesn't disappear
     results.forEach(r => newResultsMap.set(r.username, r));
 
     try {
       const response = await fetch('/api/check-batch', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           usernames: list,
           concurrency,
@@ -339,6 +621,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }),
         signal: abortController.signal
       });
+
+      if (response.status === 401) {
+        showLicenseModal('License Key không hợp lệ hoặc đã hết hạn!');
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(`Máy chủ phản hồi mã: ${response.status}`);
@@ -383,7 +670,6 @@ document.addEventListener('DOMContentLoaded', () => {
               progressPercent.textContent = `${percent}%`;
               progressStatusText.textContent = `Đang cập nhật: ${data.stats.checked}/${data.stats.total} (${item.username})`;
 
-              // Incremental save
               scheduleAutoSave();
             } else if (data.type === 'done') {
               const live = results.filter(r => r.status === 'LIVE').length;
@@ -432,7 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 7. Auto-Loop Engine (1 minute interval by default)
+  // 9. Auto-Loop Engine (1 minute interval by default)
   function onAutoLoopToggleChange() {
     const isEnabled = autoLoopToggle.checked;
     scheduleAutoSave();
@@ -509,7 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 8. Stats & Table Rendering
+  // 10. Stats & Table Rendering
   function updateStats(stats) {
     statTotal.textContent = stats.total || 0;
     statLive.textContent = stats.live || 0;
@@ -632,7 +918,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTable();
   });
 
-  // 9. Quick Copy & Export Actions
+  // 11. Quick Copy & Export Actions
   btnCopyLive.addEventListener('click', () => {
     const liveUsers = results.filter(r => r.status === 'LIVE').map(r => r.username);
     if (liveUsers.length === 0) {
@@ -711,7 +997,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 10. Single Account Check Form
+  // 12. Single Account Check Form
   singleCheckForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const rawVal = singleUsernameInput.value.trim();
@@ -724,9 +1010,14 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/api/check-single', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ username: rawVal })
       });
+
+      if (res.status === 401) {
+        showLicenseModal('License Key không hợp lệ hoặc đã hết hạn!');
+        return;
+      }
 
       const data = await res.json();
       renderSingleResult(data);
@@ -798,7 +1089,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
-  // 11. Helpers
+  // 13. Helpers
   function showToast(msg, type = 'success') {
     toast.textContent = msg;
     toast.style.display = 'block';
@@ -848,6 +1139,16 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/'/g, '&#039;');
   }
 
-  // 12. Initialize on Startup
-  loadStateFromBackend();
+  // 14. Initialize on Startup
+  (async function init() {
+    // Check saved license key
+    if (activeLicenseKey) {
+      const ok = await verifyLicenseKey(activeLicenseKey, false);
+      if (ok) {
+        await loadStateFromBackend();
+      }
+    } else {
+      showLicenseModal();
+    }
+  })();
 });

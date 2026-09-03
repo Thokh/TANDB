@@ -1,0 +1,19 @@
+{
+  "adminKey": "ADMIN_MASTER_KEY_2026",
+  "keys": [
+    {
+      "key": "IKID-VIP-2026",
+      "name": "Key Nội Bộ Doanh Nghiệp (Không giới hạn)",
+      "expireAt": "2030-01-01",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-03"
+    },
+    {
+      "key": "DEMO-KEY-7DAYS",
+      "name": "Key Dùng Thử 7 Ngày",
+      "expireAt": "2026-09-10",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-03"
+    }
+  ]
+}

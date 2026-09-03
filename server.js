@@ -7,10 +7,100 @@ const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const DATA_DIR = path.join(__dirname, 'data');
 const STATE_FILE = path.join(DATA_DIR, 'state.json');
+const KEYS_FILE = path.join(DATA_DIR, 'keys.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) {}
+}
+
+const DEFAULT_KEYS_DATA = {
+  adminKey: process.env.ADMIN_KEY || "ADMIN_MASTER_KEY_2026",
+  keys: [
+    {
+      key: "IKID-VIP-2026",
+      name: "Key Nội Bộ Doanh Nghiệp (Không giới hạn)",
+      expireAt: "2030-01-01",
+      status: "ACTIVE",
+      createdAt: "2026-09-03"
+    },
+    {
+      key: "DEMO-KEY-7DAYS",
+      name: "Key Dùng Thử 7 Ngày",
+      expireAt: "2026-09-10",
+      status: "ACTIVE",
+      createdAt: "2026-09-03"
+    }
+  ]
+};
+
+function loadKeysData() {
+  try {
+    if (fs.existsSync(KEYS_FILE)) {
+      const parsed = JSON.parse(fs.readFileSync(KEYS_FILE, 'utf-8'));
+      if (process.env.ADMIN_KEY) parsed.adminKey = process.env.ADMIN_KEY;
+      if (!Array.isArray(parsed.keys)) parsed.keys = [];
+      return parsed;
+    }
+  } catch (e) {
+    console.error('Error reading keys file:', e);
+  }
+  return DEFAULT_KEYS_DATA;
+}
+
+function saveKeysData(data) {
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(KEYS_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    return true;
+  } catch (e) {
+    console.error('Error saving keys file:', e);
+    return false;
+  }
+}
+
+function validateLicenseKey(keyStr) {
+  if (!keyStr) return { valid: false, error: 'Vui lòng cung cấp License Key để sử dụng!' };
+  const cleanKey = String(keyStr).trim();
+  const data = loadKeysData();
+
+  if (cleanKey === data.adminKey) {
+    return {
+      valid: true,
+      role: 'admin',
+      name: 'Quản Trị Viên (Admin Master)',
+      key: cleanKey,
+      expireAt: 'Vĩnh viễn'
+    };
+  }
+
+  const found = data.keys.find(k => k.key.toUpperCase() === cleanKey.toUpperCase());
+  if (!found) {
+    return { valid: false, error: 'License Key không chính xác hoặc chưa được kích hoạt!' };
+  }
+
+  if (found.status !== 'ACTIVE') {
+    return { valid: false, error: 'License Key này đã bị vô hiệu hóa bởi Quản trị viên!' };
+  }
+
+  if (found.expireAt && found.expireAt !== 'Vĩnh viễn') {
+    const expireTime = new Date(found.expireAt).getTime();
+    if (Date.now() > expireTime + 24 * 60 * 60 * 1000) {
+      return { valid: false, error: `License Key đã hết hạn sử dụng vào ngày ${found.expireAt}!` };
+    }
+  }
+
+  return {
+    valid: true,
+    role: 'user',
+    name: found.name || 'Thành viên',
+    key: found.key,
+    expireAt: found.expireAt || 'Vĩnh viễn'
+  };
+}
+
+function extractKey(req, parsedUrl) {
+  return req.headers['x-license-key'] || (parsedUrl && parsedUrl.searchParams.get('key')) || '';
 }
 
 const USER_AGENTS = [
@@ -217,8 +307,8 @@ const MIME_TYPES = {
 const server = http.createServer(async (req, res) => {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-License-Key');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -228,6 +318,127 @@ const server = http.createServer(async (req, res) => {
 
   const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
   const pathname = parsedUrl.pathname;
+
+  // Verify License Key API
+  if (req.method === 'POST' && pathname === '/api/verify-key') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body || '{}');
+        const key = data.key || extractKey(req, parsedUrl);
+        const result = validateLicenseKey(key);
+        if (result.valid) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } else {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        }
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // Admin Keys Management: GET /api/admin/keys
+  if (req.method === 'GET' && pathname === '/api/admin/keys') {
+    const auth = validateLicenseKey(extractKey(req, parsedUrl));
+    if (!auth.valid || auth.role !== 'admin') {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Chỉ Quản trị viên (Admin) mới có quyền truy cập!' }));
+      return;
+    }
+    const data = loadKeysData();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+    return;
+  }
+
+  // Admin Keys Management: POST /api/admin/keys
+  if (req.method === 'POST' && pathname === '/api/admin/keys') {
+    const auth = validateLicenseKey(extractKey(req, parsedUrl));
+    if (!auth.valid || auth.role !== 'admin') {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Chỉ Quản trị viên (Admin) mới có quyền tạo Key!' }));
+      return;
+    }
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const newKeyData = JSON.parse(body || '{}');
+        if (!newKeyData.key || !newKeyData.key.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Mã Key không được để trống!' }));
+          return;
+        }
+        const data = loadKeysData();
+        const existing = data.keys.find(k => k.key.toUpperCase() === newKeyData.key.trim().toUpperCase());
+        if (existing || newKeyData.key.trim() === data.adminKey) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Mã Key này đã tồn tại!' }));
+          return;
+        }
+
+        const newEntry = {
+          key: newKeyData.key.trim().toUpperCase(),
+          name: newKeyData.name ? newKeyData.name.trim() : 'Khách hàng',
+          expireAt: newKeyData.expireAt ? newKeyData.expireAt.trim() : '2030-01-01',
+          status: 'ACTIVE',
+          createdAt: new Date().toISOString().split('T')[0]
+        };
+        data.keys.unshift(newEntry);
+        saveKeysData(data);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, key: newEntry }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // Admin Keys Management: DELETE /api/admin/keys
+  if (req.method === 'DELETE' && pathname === '/api/admin/keys') {
+    const auth = validateLicenseKey(extractKey(req, parsedUrl));
+    if (!auth.valid || auth.role !== 'admin') {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Chỉ Quản trị viên mới có quyền xóa Key!' }));
+      return;
+    }
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body || '{}');
+        const targetKey = (data.key || '').trim().toUpperCase();
+        const keysData = loadKeysData();
+        keysData.keys = keysData.keys.filter(k => k.key.toUpperCase() !== targetKey);
+        saveKeysData(keysData);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // Enforce License Key for check & state endpoints
+  if (pathname.startsWith('/api/check-') || pathname === '/api/state') {
+    const auth = validateLicenseKey(extractKey(req, parsedUrl));
+    if (!auth.valid) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: auth.error, requireKey: true }));
+      return;
+    }
+  }
 
   // Single Check API
   if (req.method === 'POST' && pathname === '/api/check-single') {
