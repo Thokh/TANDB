@@ -1,0 +1,17 @@
+{
+  "name": "instagram-live-checker",
+  "version": "1.0.0",
+  "description": "Mini app check live tài khoản Instagram và lượt theo dõi thời gian thực",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "instagram",
+    "checker",
+    "followers",
+    "live-die-checker"
+  ],
+  "author": "",
+  "license": "MIT"
+}

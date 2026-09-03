@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InstaCheck Pro - Check Live & Followers Instagram</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="dark">
+  <div class="app-container">
+    <!-- Header -->
+    <header class="main-header">
+      <div class="header-content">
+        <div class="brand">
+          <div class="logo-box">
+            <svg class="ig-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+              <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+            </svg>
+          </div>
+          <div>
+            <div class="brand-title-wrap">
+              <h1 class="brand-title">InstaCheck <span>Pro</span></h1>
+              <span class="version-badge">v1.0</span>
+            </div>
+            <p class="brand-subtitle">Kiểm tra Live / Die & Lượt theo dõi Instagram thời gian thực</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="server-status">
+            <span class="status-dot"></span>
+            <span class="status-text">Hệ thống sẵn sàng</span>
+          </div>
+          <button id="themeToggle" class="btn-icon" title="Chuyển giao diện Sáng / Tối">
+            <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+            </svg>
+            <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-tab="bulk">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Kiểm tra hàng loạt (Bulk Check)
+          <span class="badge-tab">Khuyên dùng</span>
+        </button>
+        <button class="nav-tab" data-tab="single">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Kiểm tra nhanh 1 tài khoản
+        </button>
+      </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- TAB 1: BULK CHECK -->
+      <section id="bulkTab" class="tab-pane active">
+        <!-- Input & Configuration Box -->
+        <div class="card panel-config">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Danh sách tài khoản Instagram cần kiểm tra</h2>
+              <p class="panel-desc">Nhập mỗi tài khoản trên 1 dòng (chấp nhận <code>@username</code>, <code>username</code> hoặc link <code>instagram.com/username</code>)</p>
+            </div>
+            <div class="panel-quick-actions">
+              <button id="btnSampleData" class="btn btn-outline btn-sm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Tải danh sách mẫu
+              </button>
+              <label class="btn btn-outline btn-sm file-upload-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Nhập file TXT/CSV
+                <input type="file" id="fileInput" accept=".txt,.csv" hidden>
+              </label>
+            </div>
+          </div>
+
+          <div class="textarea-wrap">
+            <textarea id="usernamesInput" placeholder="Ví dụ:&#10;cristiano&#10;selenagomez&#10;@taylorswift&#10;https://www.instagram.com/apple/&#10;leomessi&#10;this_is_a_dead_account_12345" rows="6"></textarea>
+            <div class="textarea-footer">
+              <span id="inputCountText">0 tài khoản đã nhập</span>
+              <button id="btnClearInput" class="text-btn">Xóa nội dung</button>
+            </div>
+          </div>
+
+          <!-- Controls & Settings -->
+          <div class="controls-row">
+            <div class="settings-group">
+              <div class="setting-item">
+                <label for="concurrencySelect">Luồng chạy cùng lúc:</label>
+                <select id="concurrencySelect" class="form-select">
+                  <option value="1">1 luồng (An toàn nhất)</option>
+                  <option value="2" selected>2 luồng (Khuyên dùng)</option>
+                  <option value="3">3 luồng (Nhanh)</option>
+                  <option value="5">5 luồng (Tốc độ cao)</option>
+                </select>
+              </div>
+
+              <div class="setting-item">
+                <label for="delaySelect">Nghỉ giữa các lượt:</label>
+                <select id="delaySelect" class="form-select">
+                  <option value="100">100ms (Siêu nhanh)</option>
+                  <option value="300" selected>300ms (Cân bằng)</option>
+                  <option value="600">600ms (Ổn định)</option>
+                  <option value="1200">1.2 giây (Tránh chặn IP)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="action-buttons">
+              <button id="btnStartBatch" class="btn btn-primary btn-lg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>Bắt đầu kiểm tra</span>
+              </button>
+              <button id="btnStopBatch" class="btn btn-danger btn-lg" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12"/></svg>
+                <span>Dừng lại</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto-Loop & Auto-Save Monitor Card -->
+        <div class="card auto-loop-card">
+          <div class="auto-loop-header">
+            <div class="auto-loop-title-wrap">
+              <div class="monitor-pulse-icon" id="monitorPulseIcon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              </div>
+              <div>
+                <div class="auto-loop-title">
+                  <h3>Giám sát & Tự động cập nhật liên tục</h3>
+                  <span id="autoLoopStatusBadge" class="badge-status-inactive">Đang tắt</span>
+                </div>
+                <p class="auto-loop-desc">Tự động quét lại định kỳ (mặc định 1 phút / lần), phát hiện biến động số người theo dõi và tự động lưu</p>
+              </div>
+            </div>
+
+            <div class="auto-loop-toggle-wrap">
+              <label class="switch">
+                <input type="checkbox" id="autoLoopToggle">
+                <span class="slider round"></span>
+              </label>
+              <span class="switch-label" id="autoLoopSwitchLabel">Bật tự động quét</span>
+            </div>
+          </div>
+
+          <div class="auto-loop-body" id="autoLoopBody">
+            <div class="auto-loop-settings">
+              <div class="setting-item">
+                <label for="autoLoopInterval">Chu kỳ quét lặp lại:</label>
+                <select id="autoLoopInterval" class="form-select">
+                  <option value="60" selected>1 phút / lần (Khuyên dùng)</option>
+                  <option value="120">2 phút / lần</option>
+                  <option value="300">5 phút / lần</option>
+                  <option value="600">10 phút / lần</option>
+                  <option value="1800">30 phút / lần</option>
+                </select>
+              </div>
+
+              <div class="countdown-widget">
+                <div class="countdown-circle">
+                  <span id="countdownTime" class="countdown-text">60s</span>
+                </div>
+                <div class="countdown-info">
+                  <span class="countdown-label">Lần quét tiếp theo:</span>
+                  <span id="countdownStatus" class="countdown-val">Sẵn sàng đếm ngược</span>
+                </div>
+              </div>
+
+              <div class="loop-stats">
+                <div class="loop-stat-chip">
+                  <span>Vòng quét:</span>
+                  <strong id="loopCounter">#0</strong>
+                </div>
+                <div class="loop-stat-chip">
+                  <span>Cập nhật gần nhất:</span>
+                  <strong id="lastCheckTime">Chưa quét</strong>
+                </div>
+                <div class="loop-stat-chip auto-save-chip">
+                  <span class="save-dot"></span>
+                  <strong id="autoSaveIndicator">Tự lưu: Đã bật</strong>
+                </div>
+              </div>
+
+              <button id="btnTriggerNow" class="btn btn-outline btn-sm" title="Quét ngay không cần chờ đếm ngược">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                Quét ngay lập tức
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div id="progressSection" class="card progress-card hidden">
+          <div class="progress-info">
+            <div class="progress-title-wrap">
+              <span class="spinner-small" id="progressSpinner"></span>
+              <span id="progressStatusText" class="progress-status-text">Đang chuẩn bị...</span>
+            </div>
+            <span id="progressPercent" class="progress-percent">0%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div id="progressBarFill" class="progress-bar-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Stats Overview Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon total-bg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Tổng số tài khoản</span>
+              <span id="statTotal" class="stat-value">0</span>
+            </div>
+          </div>
+
+          <div class="stat-card live-card">
+            <div class="stat-icon live-bg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Tài khoản LIVE</span>
+              <span id="statLive" class="stat-value text-live">0</span>
+            </div>
+          </div>
+
+          <div class="stat-card die-card">
+            <div class="stat-icon die-bg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Tài khoản DIE</span>
+              <span id="statDie" class="stat-value text-die">0</span>
+            </div>
+          </div>
+
+          <div class="stat-card error-card">
+            <div class="stat-icon error-bg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Lỗi / Hết giờ</span>
+              <span id="statError" class="stat-value text-error">0</span>
+            </div>
+          </div>
+
+          <div class="stat-card followers-card">
+            <div class="stat-icon followers-bg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            </div>
+            <div class="stat-info">
+              <span class="stat-label">Live Rate</span>
+              <span id="statRate" class="stat-value">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Table Section -->
+        <div class="card results-panel">
+          <div class="results-toolbar">
+            <div class="filter-buttons">
+              <button class="filter-btn active" data-filter="all">Tất cả (<span id="filterAllCount">0</span>)</button>
+              <button class="filter-btn live" data-filter="LIVE">Chỉ Live (<span id="filterLiveCount">0</span>)</button>
+              <button class="filter-btn die" data-filter="DIE">Chỉ Die (<span id="filterDieCount">0</span>)</button>
+              <button class="filter-btn error" data-filter="ERROR">Lỗi (<span id="filterErrorCount">0</span>)</button>
+            </div>
+
+            <div class="table-actions">
+              <div class="search-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="tableSearchInput" placeholder="Tìm kiếm trong kết quả...">
+              </div>
+
+              <div class="dropdown">
+                <button class="btn btn-outline btn-sm dropdown-toggle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  Sao chép nhanh
+                </button>
+                <div class="dropdown-menu">
+                  <button id="btnCopyLive" class="dropdown-item">📋 Copy danh sách nick LIVE</button>
+                  <button id="btnCopyDie" class="dropdown-item">📋 Copy danh sách nick DIE</button>
+                  <button id="btnCopyAll" class="dropdown-item">📋 Copy toàn bộ kết quả</button>
+                </div>
+              </div>
+
+              <div class="dropdown">
+                <button class="btn btn-outline btn-sm dropdown-toggle">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Xuất dữ liệu
+                </button>
+                <div class="dropdown-menu">
+                  <button id="btnExportCSV" class="dropdown-item">📊 Xuất file Excel (CSV)</button>
+                  <button id="btnExportJSON" class="dropdown-item">{ } Xuất file JSON</button>
+                </div>
+              </div>
+
+              <button id="btnClearResults" class="btn btn-outline btn-sm text-danger" title="Xóa toàn bộ kết quả">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Table Container -->
+          <div class="table-responsive">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th width="50">STT</th>
+                  <th width="65">Avatar</th>
+                  <th>Tài khoản</th>
+                  <th>Tên hiển thị</th>
+                  <th width="110">Trạng thái</th>
+                  <th width="130">Followers</th>
+                  <th width="130">Biến động</th>
+                  <th width="120">Following</th>
+                  <th width="100">Bài viết</th>
+                  <th width="110">Cập nhật</th>
+                  <th width="100">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="resultsTableBody">
+                <tr class="empty-row">
+                  <td colspan="11">
+                    <div class="empty-state">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <p>Chưa có dữ liệu kiểm tra</p>
+                      <span>Hãy nhập danh sách tài khoản ở trên và nhấn "Bắt đầu kiểm tra"</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: SINGLE CHECK -->
+      <section id="singleTab" class="tab-pane">
+        <div class="single-check-container">
+          <div class="card single-search-card">
+            <h2 class="panel-title">Kiểm tra thông tin tài khoản Instagram</h2>
+            <p class="panel-desc">Nhập tên người dùng (username) hoặc đường link trang cá nhân</p>
+
+            <form id="singleCheckForm" class="single-form">
+              <div class="single-input-wrap">
+                <span class="at-symbol">@</span>
+                <input type="text" id="singleUsernameInput" placeholder="Ví dụ: cristiano hoặc https://instagram.com/apple" autocomplete="off" required>
+                <button type="submit" id="btnSingleSubmit" class="btn btn-primary">
+                  <span class="btn-text">Kiểm tra ngay</span>
+                  <span class="spinner-small hidden" id="singleSpinner"></span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Single Result Card -->
+          <div id="singleResultCard" class="card single-result-card hidden">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>InstaCheck Pro &bull; Mini App Check Live Instagram & Lượt theo dõi &bull; Công nghệ quét tốc độ cao</p>
+    </footer>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

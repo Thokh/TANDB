@@ -1,0 +1,67 @@
+{
+  "rawInput": "youlovehaleyxoxo\n bbaylovekim_\n youlovekimmie_\nhaley.cutty",
+  "results": [
+    {
+      "username": "youlovehaleyxoxo",
+      "status": "LIVE",
+      "name": "Haley&#x1f495;",
+      "followers": "526K",
+      "following": "0",
+      "posts": "1,212",
+      "avatar": "https://scontent.cdninstagram.com/v/t51.75761-19/497624286_17879805810315015_1415186035652359808_n.jpg?stp=dst-jpg_s100x100_tt6&_nc_cat=104&ccb=7-5&_nc_sid=bf7eb4&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy4xMDgwLkMzIn0%3D&_nc_ohc=vsyXiEzoCNsQ7kNvwEeTVhC&_nc_oc=Ado9RsECH3_KYrbbFChyUTZ5H1DT8SrwO8VIfQjwssjgmNv1dp0L23iWGndRJ9vIErI&_nc_zt=24&_nc_ht=scontent.cdninstagram.com&_nc_gid=wE7VxMieyfQraU7Wg6mEPg&_nc_ss=7f689&oh=00_AQKXL6LXI7xPFZabFjPvbWePqNJAWDGuVDciqzp4JTIzxA&oe=6A9ED836",
+      "isVerified": false,
+      "profileUrl": "https://www.instagram.com/youlovehaleyxoxo/",
+      "checkedAt": "2026-09-03T05:30:36.677Z",
+      "previousFollowers": "526K",
+      "lastUpdated": "12:30:36"
+    },
+    {
+      "username": "bbaylovekim_",
+      "status": "LIVE",
+      "name": "bbaylovekim_",
+      "followers": "329K",
+      "following": "0",
+      "posts": "720",
+      "avatar": "https://scontent.cdninstagram.com/v/t51.82787-19/769144229_17941343796323191_6450572915332629976_n.jpg?stp=dst-jpg_s100x100_tt6&_nc_cat=1&ccb=7-5&_nc_sid=bf7eb4&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy4xMDgwLkMzIn0%3D&_nc_ohc=M_s3rJtbSKwQ7kNvwEk7Rrh&_nc_oc=AdpSr_QIRO0a2j_yyc_yJB8P-IKBl49UUKO5SJ_TcYydnVTXXQ3waz8mzt4dyAZAJM8&_nc_zt=24&_nc_ht=scontent.cdninstagram.com&_nc_gid=uHiiASGXqArrRXMuUgKCTQ&_nc_ss=7f689&oh=00_AQIbD0qMN0I2U47ut5AidduPH_PweKVQC2K8uEeZ69UKjg&oe=6A9EE1DB",
+      "isVerified": false,
+      "profileUrl": "https://www.instagram.com/bbaylovekim_/",
+      "checkedAt": "2026-09-03T05:30:37.789Z",
+      "previousFollowers": "329K",
+      "lastUpdated": "12:30:37"
+    },
+    {
+      "username": "youlovekimmie_",
+      "status": "LIVE",
+      "name": "Kimmiforyou",
+      "followers": "331K",
+      "following": "0",
+      "posts": "965",
+      "avatar": "https://scontent.cdninstagram.com/v/t51.82787-19/641273957_17871949890558524_2828261131348558687_n.jpg?stp=dst-jpg_s100x100_tt6&_nc_cat=1&ccb=7-5&_nc_sid=bf7eb4&efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLnd3dy4xMDgwLkMzIn0%3D&_nc_ohc=bkayWnItvIMQ7kNvwHFqMpt&_nc_oc=Adp8rqVZuL_gS2Pnte-QPXwfQh0Au4Ns8sPh2qk9VNsswb0tTnGDz14gXNATpSxvQhk&_nc_zt=24&_nc_ht=scontent.cdninstagram.com&_nc_gid=EJHbjmAt7sn_HdVv0gNQ2A&_nc_ss=7f689&oh=00_AQJw7BWgbz1xAlPr-X5jDS0U5FicGdMF2yrBCUsrH0NUmA&oe=6A9EEA94",
+      "isVerified": false,
+      "profileUrl": "https://www.instagram.com/youlovekimmie_/",
+      "checkedAt": "2026-09-03T05:30:37.816Z",
+      "previousFollowers": "331K",
+      "lastUpdated": "12:30:37"
+    },
+    {
+      "username": "haley.cutty",
+      "status": "DIE",
+      "name": "-",
+      "followers": "-",
+      "following": "-",
+      "posts": "-",
+      "avatar": "",
+      "isVerified": false,
+      "profileUrl": "https://www.instagram.com/haley.cutty/",
+      "checkedAt": "2026-09-03T05:30:37.779Z",
+      "previousFollowers": "-",
+      "lastUpdated": "12:30:37"
+    }
+  ],
+  "autoLoop": true,
+  "intervalSeconds": 60,
+  "loopCount": 36,
+  "lastCheckTime": "12:30:37",
+  "updatedAt": "2026-09-03T05:30:39.139Z",
+  "savedAt": "2026-09-03T05:30:39.140Z"
+}
